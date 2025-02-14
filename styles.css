@@ -1,0 +1,328 @@
+/* CSS Variables */
+:root {
+  --ntp-focus-shadow-color: rgba(66, 133, 244, 0.4);
+  --ntp-theme-text-color: #fff;
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --card-hover-bg: rgba(255, 255, 255, 0.15);
+  --card-radius: 12px;
+  --card-padding: 20px;
+  --site-size: 48px;
+  --search-height: 44px;
+  --transition: 0.2s;
+  --white-10: rgba(255, 255, 255, 0.1);
+  --white-15: rgba(255, 255, 255, 0.15);
+  --white-20: rgba(255, 255, 255, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --blur-bg: blur(10px);
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  background-color: rgba(51,60,77,1);
+  color: var(--ntp-theme-text-color);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size: 81.25%;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Layout */
+.content-wrapper {
+  max-width: 800px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Search */
+.search-container {
+  margin-bottom: 32px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.search-form {
+  width: 100%;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  height: var(--search-height);
+  background: var(--white-10);
+  border: none;
+  border-radius: calc(var(--search-height) / 2);
+  padding: 0 48px;
+  color: var(--ntp-theme-text-color);
+  font-size: 16px;
+  outline: none;
+  transition: background-color var(--transition);
+}
+
+.search-input:is(:hover, :focus) {
+  background: var(--white-15);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--ntp-theme-text-color);
+  pointer-events: none;
+}
+
+/* Sections */
+.section {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Sites grid */
+.sites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 20px;
+}
+
+.site-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--ntp-theme-text-color);
+  padding: 12px;
+  border-radius: 8px;
+  transition: background-color var(--transition);
+  position: relative;
+}
+
+.site-tile:hover {
+  background-color: var(--card-hover-bg);
+}
+
+.site-tile:hover .site-actions {
+  opacity: 1;
+  display: flex; /* Добавляем, чтобы иконки удаления отображались */
+}
+
+.site-icon {
+  width: var(--site-size);
+  height: var(--site-size);
+  background: var(--white-10);
+  border-radius: 50%;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 500;
+  color: white; /* Цвет текста */
+  overflow: hidden;
+  text-transform: uppercase; /* Преобразует текст в верхний регистр */
+}
+
+.site-icon img {
+  width: 60%;
+  height: 60%;
+  object-fit: cover;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+}
+
+.site-title {
+  font-size: 13px;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Actions */
+.site-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity var(--transition);
+  display: flex;
+  gap: 4px;
+}
+
+.site-edit,
+.site-remove {
+  background: none;
+  border: none;
+  color: var(--ntp-theme-text-color);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition);
+}
+
+.site-edit:hover,
+.site-remove:hover {
+  background: var(--white-20);
+}
+
+/* Add site button */
+.add-site-button {
+  background: transparent;
+  border: 1px solid var(--ntp-theme-text-color);
+  color: var(--ntp-theme-text-color);
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.add-site-button:hover {
+  background: var(--card-hover-bg);
+}
+
+/* Modal with enhanced design */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition);
+  backdrop-filter: var(--blur-bg);
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: var(--card-radius);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--blur-bg);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--white-20);
+  border-radius: 4px;
+  background: var(--white-10);
+  color: var(--ntp-theme-text-color);
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--white-15);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.modal-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.modal-button-cancel {
+  background: transparent;
+  border: 1px solid var(--white-20);
+  color: var(--ntp-theme-text-color);
+}
+
+.modal-button-cancel:hover {
+  background: var(--white-10);
+}
+
+.modal-button-submit {
+  background: #1a73e8;
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.modal-button-submit:hover {
+  background: #1557b0;
+}

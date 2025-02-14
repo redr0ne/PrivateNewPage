@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Новая вкладка</title>
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="tabContent.js" as="script">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="content-wrapper">
+        <div class="search-container">
+            <form class="search-form" action="https://duckduckgo.com/" method="get">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" name="q" class="search-input" placeholder="Поиск в DuckDuckGo..." autocomplete="off">
+            </form>
+        </div>
+
+        <div class="section" id="favorites">
+            <div class="section-header">
+                <h2 class="section-title">Избранное</h2>
+                <button class="add-site-button" id="addSiteButton">Добавить сайт</button>
+            </div>
+            <div class="sites-grid" id="favoritesGrid"></div>
+        </div>
+
+        <div class="section" id="recently-visited">
+            <div class="section-header">
+                <h2 class="section-title">Недавно посещённые</h2>
+            </div>
+            <div class="sites-grid" id="recentSitesGrid"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="addSiteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Добавить сайт</h3>
+            </div>
+            <form id="addSiteForm">
+                <div class="form-group">
+                    <label class="form-label" for="siteTitle">Название (необязательно)</label>
+                    <input type="text" id="siteTitle" class="form-input" placeholder="Будет получено автоматически">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="siteUrl">URL</label>
+                    <input type="text" id="siteUrl" class="form-input" required placeholder="Например: vk.com">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-button modal-button-cancel" id="cancelAddSite">Отмена</button>
+                    <button type="submit" class="modal-button modal-button-submit">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="utils.js"></script>
+    <script src="tabContent.js"></script>
+</body>
+</html>
