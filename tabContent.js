@@ -82,6 +82,7 @@ class TabContentManager {
         this.form = document.getElementById('addSiteForm');
         this.grid = document.getElementById('favoritesGrid');
         this.recentGrid = document.getElementById('recentSitesGrid');
+        this.topSitesGrid = document.getElementById('topSitesGrid');
         this.urlInput = document.getElementById('siteUrl');
         this.init();
     }
@@ -92,6 +93,7 @@ class TabContentManager {
         this.renderFavorites();
         this.setupUrlValidation();
         this.loadRecentSites();
+        this.loadTopSites();
     }
 
     async loadFavorites() {
@@ -115,6 +117,17 @@ class TabContentManager {
                 this.closeModal();
             }
         });
+
+        // Обработчик кнопки поиска в Яндексе
+        const yandexBtn = document.getElementById('yandexSearchButton');
+        if (yandexBtn) {
+            yandexBtn.addEventListener('click', () => {
+                const query = document.querySelector('.search-input').value;
+                if (query.trim() !== "") {
+                    chrome.tabs.create({ url: "https://yandex.ru/search/?text=" + encodeURIComponent(query) });
+                }
+            });
+        }
     }
 
     setupUrlValidation() {
@@ -128,146 +141,167 @@ class TabContentManager {
         });
     }
 
-async loadRecentSites() {
-    try {
-        const historyItems = await new Promise((resolve) => {
-            chrome.history.search({
-                text: '',
-                maxResults: MAX_RECENT * 3, // Get more items to handle duplicates
-                startTime: Date.now() - 7 * 24 * 60 * 60 * 1000
-            }, resolve);
-        });
-
-        // Create a Map to store unique entries by URL (not just hostname)
-        const uniqueSites = new Map();
-        
-        historyItems.forEach(item => {
-            try {
-                const url = new URL(item.url);
-                // Skip chrome:// URLs and empty titles
-                if (url.protocol === 'chrome:' || !item.title?.trim()) {
-                    return;
-                }
-                
-                // Use full URL as key to prevent domain-only conflicts
-                if (!uniqueSites.has(item.url)) {
-                    uniqueSites.set(item.url, {
-                        url: item.url,
-                        title: item.title,
-                        visitCount: item.visitCount,
-                        lastVisitTime: item.lastVisitTime,
-                        domain: url.hostname
-                    });
-                }
-            } catch (e) {
-                console.error('Invalid URL:', item.url);
-            }
-        });
-
-        // Sort by last visit time and limit to MAX_RECENT
-        const recentSites = Array.from(uniqueSites.values())
-            .sort((a, b) => b.lastVisitTime - a.lastVisitTime)
-            .slice(0, MAX_RECENT);
-
-        this.renderRecentSites(recentSites);
-    } catch (error) {
-        console.error('Failed to load recent sites:', error);
-    }
-}
-
-    renderRecentSites(sites) {
-        if (!this.recentGrid) return;
-
-        this.recentGrid.innerHTML = '';
-        sites.forEach(site => {
-            const tile = document.createElement('a');
-            tile.href = site.url;
-            tile.className = 'site-tile';
-
-            const faviconUrl = `${new URL(site.url).origin}/favicon.ico`;
-            const iconDiv = document.createElement('div');
-            iconDiv.className = 'site-icon';
-
-            const img = document.createElement('img');
-            img.src = faviconUrl;
-            img.alt = site.title;
-            img.onerror = () => {
-                img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><text x="8" y="12" font-size="12" text-anchor="middle" fill="white">' + this.getIconLetter(site.title) + '</text></svg>';
-            };
-            iconDiv.appendChild(img);
-
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'site-title';
-            titleSpan.textContent = site.title;
-            
-            const siteActions = document.createElement('div');
-            siteActions.className = 'site-actions';
-
-            const removeButton = document.createElement('button');
-            removeButton.className = 'site-remove';
-            removeButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            `;
-            removeButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.removeRecentSite(site.url);
+    async loadRecentSites() {
+        try {
+            const historyItems = await new Promise((resolve) => {
+                chrome.history.search({
+                    text: '',
+                    maxResults: MAX_RECENT * 3,
+                    startTime: Date.now() - 7 * 24 * 60 * 60 * 1000
+                }, resolve);
             });
 
-            siteActions.appendChild(removeButton);
-            tile.appendChild(iconDiv);
-            tile.appendChild(titleSpan);
-            tile.appendChild(siteActions);
-            this.recentGrid.appendChild(tile);
+            const uniqueSites = new Map();
+            historyItems.forEach(item => {
+                try {
+                    const url = new URL(item.url);
+                    if (url.protocol === 'chrome:' || !item.title?.trim()) {
+                        return;
+                    }
+                    if (!uniqueSites.has(item.url)) {
+                        uniqueSites.set(item.url, {
+                            url: item.url,
+                            title: item.title,
+                            visitCount: item.visitCount,
+                            lastVisitTime: item.lastVisitTime,
+                            domain: url.hostname
+                        });
+                    }
+                } catch (e) {
+                    console.error('Invalid URL:', item.url);
+                }
+            });
+
+            const recentSites = Array.from(uniqueSites.values())
+                .sort((a, b) => b.lastVisitTime - a.lastVisitTime)
+                .slice(0, MAX_RECENT);
+
+            this.renderRecentSites(recentSites);
+        } catch (error) {
+            console.error('Failed to load recent sites:', error);
+        }
+    }
+
+renderRecentSites(sites) {
+    if (!this.recentGrid) return;
+    this.recentGrid.innerHTML = '';
+    sites.forEach(site => {
+        const tile = document.createElement('a');
+        tile.href = site.url;
+        tile.className = 'site-tile';
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'site-icon';
+        // Используем универсальную функцию для создания favicon
+        const img = utils.createFaviconImg(site);
+        iconDiv.appendChild(img);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'site-title';
+        titleSpan.textContent = site.title;
+
+        const siteActions = document.createElement('div');
+        siteActions.className = 'site-actions';
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'site-remove';
+        removeButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        `;
+        removeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.removeRecentSite(site.url);
         });
-    }
+
+        siteActions.appendChild(removeButton);
+        tile.appendChild(iconDiv);
+        tile.appendChild(titleSpan);
+        tile.appendChild(siteActions);
+        this.recentGrid.appendChild(tile);
+    });
+}
     
-async removeRecentSite(url) {
-    try {
-        await chrome.history.deleteUrl({ url });
-        // Reload only after successful deletion
-        await this.loadRecentSites();
-    } catch (error) {
-        console.error('Failed to remove recent site:', error);
-        alert('Не удалось удалить сайт из истории');
+    async removeRecentSite(url) {
+        try {
+            await chrome.history.deleteUrl({ url });
+            await this.loadRecentSites();
+        } catch (error) {
+            console.error('Failed to remove recent site:', error);
+            alert('Не удалось удалить сайт из истории');
+        }
     }
+
+    async loadTopSites() {
+        try {
+            chrome.topSites.get((topSites) => {
+                this.renderTopSites(topSites);
+            });
+        } catch (error) {
+            console.error('Failed to load top sites:', error);
+        }
+    }
+
+renderTopSites(sites) {
+    if (!this.topSitesGrid) return;
+    this.topSitesGrid.innerHTML = '';
+    // Ограничиваем вывод первыми 20 сайтами
+    const sitesToRender = sites.slice(0, 20);
+    sitesToRender.forEach(site => {
+        const tile = document.createElement('a');
+        tile.href = site.url;
+        tile.className = 'site-tile';
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'site-icon';
+        // Используем утилиту для создания favicon
+        const img = utils.createFaviconImg(site);
+        iconDiv.appendChild(img);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'site-title';
+        titleSpan.textContent = site.title;
+
+        tile.appendChild(iconDiv);
+        tile.appendChild(titleSpan);
+        this.topSitesGrid.appendChild(tile);
+    });
 }
+    async handleAddSite(e) {
+        e.preventDefault();
 
-async handleAddSite(e) {
-    e.preventDefault();
+        const titleInput = document.getElementById('siteTitle');
+        const urlInput = document.getElementById('siteUrl');
+        const siteId = this.form.dataset.editId;
 
-    const titleInput = document.getElementById('siteTitle');
-    const urlInput = document.getElementById('siteUrl');
-    const siteId = this.form.dataset.editId;
+        try {
+            const formattedUrl = utils.formatUrl(urlInput.value);
+            let title = titleInput.value.trim();
 
-    try {
-        const formattedUrl = utils.formatUrl(urlInput.value);
-        let title = titleInput.value.trim();
-
-        if (!title) {
-            try {
-                const metadata = await utils.getSiteMetadata(formattedUrl);
-                title = metadata.title;
-            } catch (error) {
-                alert('Не удалось добавить сайт: ' + error.message);
-                return;
+            if (!title) {
+                try {
+                    const metadata = await utils.getSiteMetadata(formattedUrl);
+                    title = metadata.title;
+                } catch (error) {
+                    alert('Не удалось добавить сайт: ' + error.message);
+                    return;
+                }
             }
-        }
 
-        if (siteId) {
-            await this.editSite(parseInt(siteId), title, formattedUrl);
-        } else {
-            await this.addSite(title, formattedUrl);
-        }
+            if (siteId) {
+                await this.editSite(parseInt(siteId), title, formattedUrl);
+            } else {
+                await this.addSite(title, formattedUrl);
+            }
 
-        this.closeModal();
-    } catch (error) {
-        alert('Пожалуйста, проверьте правильность URL: ' + error.message);
-        return;
+            this.closeModal();
+        } catch (error) {
+            alert('Пожалуйста, проверьте правильность URL: ' + error.message);
+            return;
+        }
     }
-}
 
     openModal(site = null) {
         this.modal.classList.add('active');
@@ -329,6 +363,22 @@ async handleAddSite(e) {
         this.renderFavorites();
     }
 
+reorderFavorites(draggedId, targetId) {
+    const draggedIndex = this.favorites.findIndex(site => site.id === draggedId);
+    const targetIndex = this.favorites.findIndex(site => site.id === targetId);
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    const [draggedItem] = this.favorites.splice(draggedIndex, 1);
+    this.favorites.splice(targetIndex, 0, draggedItem);
+    this.saveFavorites();
+
+    const draggedElem = document.querySelector(`[data-id="${draggedId}"]`);
+    const targetElem = document.querySelector(`[data-id="${targetId}"]`);
+    if (draggedElem && targetElem && draggedElem !== targetElem) {
+         targetElem.parentNode.insertBefore(draggedElem, targetElem);
+    }
+}
+
+
     getIconLetter(title) {
         return title.charAt(0).toUpperCase();
     }
@@ -337,70 +387,114 @@ async handleAddSite(e) {
         await chrome.storage.local.set({ favorites: this.favorites });
     }
 
-    renderFavorites() {
-        this.grid.innerHTML = '';
-        this.favorites.forEach(site => {
-            const tile = document.createElement('a');
-            tile.href = site.url;
-            tile.className = 'site-tile';
-            tile.dataset.id = site.id;
+// Пример для renderFavorites:
+renderFavorites() {
+    this.grid.innerHTML = '';
+    this.favorites.forEach(site => {
+        const tile = document.createElement('a');
+        tile.href = site.url;
+        tile.className = 'site-tile';
+        tile.dataset.id = site.id;
+        tile.draggable = true;
 
-            const faviconUrl = `${new URL(site.url).origin}/favicon.ico`;
-            const iconDiv = document.createElement('div');
-            iconDiv.className = 'site-icon';
-
-            const img = document.createElement('img');
-            img.src = faviconUrl;
-            img.alt = site.title;
-            img.onerror = () => {
-                iconDiv.textContent = this.getIconLetter(site.title);
-            };
-            iconDiv.appendChild(img);
-
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'site-title';
-            titleSpan.textContent = site.title;
-
-            const siteActions = document.createElement('div');
-            siteActions.className = 'site-actions';
-
-            const editButton = document.createElement('button');
-            editButton.className = 'site-edit';
-            editButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-            `;
-            editButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.openModal(site);
-            });
-
-            const removeButton = document.createElement('button');
-            removeButton.className = 'site-remove';
-            removeButton.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            `;
-            removeButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.removeSite(site.id);
-            });
-
-            siteActions.appendChild(editButton);
-            siteActions.appendChild(removeButton);
-
-            tile.appendChild(iconDiv);
-            tile.appendChild(titleSpan);
-            tile.appendChild(siteActions);
-
-            this.grid.appendChild(tile);
+        tile.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData("text/plain", site.id);
         });
-    }
+        tile.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        tile.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const draggedId = e.dataTransfer.getData("text/plain");
+            this.reorderFavorites(parseInt(draggedId), site.id);
+        });
+
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'site-icon';
+        // Используем утилиту из utils.js
+        const img = utils.createFaviconImg(site);
+        iconDiv.appendChild(img);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'site-title';
+        titleSpan.textContent = site.title;
+
+        const siteActions = document.createElement('div');
+        siteActions.className = 'site-actions';
+
+        const editButton = document.createElement('button');
+        editButton.className = 'site-edit';
+        editButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+        `;
+        editButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.openModal(site);
+        });
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'site-remove';
+        removeButton.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        `;
+        removeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.removeSite(site.id);
+        });
+
+        siteActions.appendChild(editButton);
+        siteActions.appendChild(removeButton);
+
+        tile.appendChild(iconDiv);
+        tile.appendChild(titleSpan);
+        tile.appendChild(siteActions);
+
+        this.grid.appendChild(tile);
+    });
+}
+}
+
+function setupSearchSuggestions() {
+    const searchInput = document.querySelector('.search-input');
+    const suggestionsList = document.querySelector('.suggestions');
+    let debounceTimeout;
+    searchInput.addEventListener('input', () => {
+         clearTimeout(debounceTimeout);
+         const query = searchInput.value.trim();
+         if (query.length < 2) {
+              suggestionsList.innerHTML = '';
+              return;
+         }
+         debounceTimeout = setTimeout(() => {
+              chrome.history.search({
+                  text: query,
+                  maxResults: 5
+              }, (results) => {
+                  suggestionsList.innerHTML = '';
+                  results.forEach(item => {
+                     const li = document.createElement('li');
+                     li.textContent = item.title || item.url;
+                     li.addEventListener('click', () => {
+                         searchInput.value = item.title || item.url;
+                         suggestionsList.innerHTML = '';
+                     });
+                     suggestionsList.appendChild(li);
+                  });
+              });
+         }, 300);
+    });
+    document.addEventListener('click', (e) => {
+         if (!searchInput.contains(e.target)) {
+             suggestionsList.innerHTML = '';
+         }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -409,5 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.search-input').focus();
         const searchInput = document.querySelector('.search-input');
         new ImageSearch(searchInput);
+        setupSearchSuggestions();
     }, 100);
 });

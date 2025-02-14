@@ -326,3 +326,81 @@ body {
 .modal-button-submit:hover {
   background: #1557b0;
 }
+
+.search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-form {
+    display: flex;
+    position: relative;
+    width: 100%;
+}
+
+.search-input {
+    flex: 1;
+    padding-right: 80px; /* Отступ для кнопки внутри поля */
+}
+
+#yandexSearchButton {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: var(--search-height);
+    background: var(--white-10);
+    border: none;
+    border-left: 1px solid var(--white-20);
+    color: var(--ntp-theme-text-color);
+    padding: 0 16px;
+    font-size: 16px;
+    border-top-right-radius: calc(var(--search-height) / 2);
+    border-bottom-right-radius: calc(var(--search-height) / 2);
+    cursor: pointer;
+    transition: background-color var(--transition);
+}
+
+#yandexSearchButton:hover {
+    background: var(--white-15);
+}
+
+/* Стили для fallback-буквы */
+.fallback-letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--site-size);
+    height: var(--site-size);
+    background-color: #555;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--ntp-theme-text-color);
+}
+
+/* Подсказки для поиска */
+.suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: calc(var(--search-height) + 4px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border-radius: 4px;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.suggestions li {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--ntp-theme-text-color);
+}
+
+.suggestions li:hover {
+    background: var(--card-hover-bg);
+}

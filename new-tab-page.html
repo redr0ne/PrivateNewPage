@@ -9,14 +9,20 @@
 </head>
 <body>
     <div class="content-wrapper">
-        <div class="search-container">
-            <form class="search-form" action="https://duckduckgo.com/" method="get">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                <input type="text" name="q" class="search-input" placeholder="Поиск в DuckDuckGo..." autocomplete="off">
-            </form>
-        </div>
+<div class="search-container">
+  <div class="search-wrapper">
+    <form class="search-form" action="https://www.startpage.com/do/search" method="get">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" name="query" class="search-input" placeholder="Поиск в Startpage..." autocomplete="off">
+        <button type="button" id="yandexSearchButton">Яндекс</button>
+    </form>
+    <ul class="suggestions"></ul>
+  </div>
+</div>
+
+
 
         <div class="section" id="favorites">
             <div class="section-header">
@@ -24,6 +30,13 @@
                 <button class="add-site-button" id="addSiteButton">Добавить сайт</button>
             </div>
             <div class="sites-grid" id="favoritesGrid"></div>
+        </div>
+
+        <div class="section" id="top-sites">
+            <div class="section-header">
+                <h2 class="section-title">Самые посещаемые</h2>
+            </div>
+            <div class="sites-grid" id="topSitesGrid"></div>
         </div>
 
         <div class="section" id="recently-visited">

@@ -1,12 +1,13 @@
 {
     "manifest_version": 3,
     "name": "Enhanced New Tab",
-    "version": "1.1",
-    "description": "A beautiful new tab page with favorites and recent sites optimized for low-end devices",
+    "version": "1.2",
+    "description": "A beautiful new tab page with favorites, top sites and recent sites optimized for low-end devices",
     "permissions": [
         "history",
         "storage",
-        "favicon"
+        "favicon",
+        "topSites"
     ],
     "optional_permissions": [
         "activeTab"
